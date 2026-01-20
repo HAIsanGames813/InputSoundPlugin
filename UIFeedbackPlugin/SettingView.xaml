@@ -3,7 +3,50 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="500">
+             xmlns:local="clr-namespace:InputSoundPlugin"
+             mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="800">
+    <UserControl.Resources>
+        <Geometry x:Key="IconPlus">M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z</Geometry>
+        <Geometry x:Key="IconMinus">M19,13H5V11H19V13Z</Geometry>
+        <Geometry x:Key="IconFolder">M10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6H12L10,4Z</Geometry>
+        <Geometry x:Key="IconDots">M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z</Geometry>
+        <Geometry x:Key="IconPlay">M8,5.14V19.14L19,12.14L8,5.14Z</Geometry>
+
+        <Style x:Key="IconButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Background" Value="#F0F0F0"/>
+            <Setter Property="BorderBrush" Value="#A0A0A0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E5E5E5"/>
+                    <Setter Property="BorderBrush" Value="#707070"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#D0D0D0"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="PlayButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Background" Value="#F0F0F0"/>
+            <Setter Property="BorderBrush" Value="#A0A0A0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E5E5E5"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -16,9 +59,6 @@
                 <TextBlock Text="機能の有効化" VerticalAlignment="Center" FontWeight="Bold"/>
                 <CheckBox IsChecked="{Binding IsEnabled}" HorizontalAlignment="Right"/>
             </DockPanel>
-
-            <Border BorderThickness="0,0,0,1" BorderBrush="#33000000" Margin="0,5"/>
-
             <Grid Margin="0,2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="100"/>
@@ -29,7 +69,6 @@
                 <TextBlock Grid.Column="1" Text="{Binding Volume, StringFormat={}{0}%}" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,10,0" Opacity="0.6"/>
                 <Slider Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding Volume}" VerticalAlignment="Center"/>
             </Grid>
-
             <Grid Margin="0,2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="100"/>
@@ -40,7 +79,6 @@
                 <TextBlock Grid.Column="1" Text="{Binding MaxDuration, StringFormat={}{0:F1}s}" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,10,0" Opacity="0.6"/>
                 <Slider Grid.Column="2" Minimum="0" Maximum="10" TickFrequency="0.1" IsSnapToTickEnabled="True" Value="{Binding MaxDuration}" VerticalAlignment="Center"/>
             </Grid>
-
             <Grid Margin="0,2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="100"/>
@@ -53,92 +91,188 @@
             </Grid>
         </StackPanel>
 
-        <GroupBox Header="ツール" Grid.Row="1" Margin="0,0,0,10" Padding="8">
-            <StackPanel>
-                <Button Content="すべてのキー/マウスにフォルダで一括設定" Click="ApplyFolderToAll_Click" Margin="0,0,0,8" Height="28"/>
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="SearchBox" TextChanged="SearchBox_TextChanged" VerticalContentAlignment="Center" Height="24" Margin="0,0,5,0"/>
+            <Button Grid.Column="1" x:Name="WaitButton" Content="キー入力で検索" Click="WaitButton_Click" Padding="10,0" Margin="0,0,5,0"/>
+            <ToggleButton Grid.Column="2" x:Name="FilterButton" Content="フィルタ ▼" Padding="10,0" Click="FilterButton_Click"/>
+            <Popup x:Name="FilterPopup" PlacementTarget="{Binding ElementName=FilterButton}" Placement="Bottom" StaysOpen="True" PopupAnimation="Fade">
+                <Border Background="White" BorderBrush="#A0A0A0" BorderThickness="1" Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="カテゴリー" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <CheckBox x:Name="FilterAZ" Content="A-Z" Checked="Filter_Changed" Unchecked="Filter_Changed" Margin="0,2"/>
+                        <CheckBox x:Name="Filter09" Content="0-9 / 記号" Checked="Filter_Changed" Unchecked="Filter_Changed" Margin="0,2"/>
+                        <CheckBox x:Name="FilterF" Content="F1-F24" Checked="Filter_Changed" Unchecked="Filter_Changed" Margin="0,2"/>
+                        <CheckBox x:Name="FilterCtrl" Content="修飾キー系" Checked="Filter_Changed" Unchecked="Filter_Changed" Margin="0,2"/>
+                        <CheckBox x:Name="FilterOther" Content="その他" Checked="Filter_Changed" Unchecked="Filter_Changed" Margin="0,5,0,5"/>
+                        <Separator/>
+                        <TextBlock Text="設定状況" FontWeight="Bold" Margin="0,5,0,5"/>
+                        <CheckBox x:Name="FilterConfigured" Content="設定済み" Checked="Filter_Changed" Unchecked="Filter_Changed" Margin="0,2"/>
+                        <CheckBox x:Name="FilterNotConfigured" Content="未設定" Checked="Filter_Changed" Unchecked="Filter_Changed" Margin="0,2"/>
+                        <Button Content="閉じる" Click="CloseFilter_Click" Margin="0,10,0,0" Padding="5,2"/>
+                    </StackPanel>
+                </Border>
+            </Popup>
+        </Grid>
+
+        <TabControl Grid.Row="2" Background="Transparent" x:Name="MainTab" SelectionChanged="MainTab_SelectionChanged">
+            <TabItem Header="キーボード" x:Name="KeyTab">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="220"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="検索：" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                    <TextBox Grid.Column="1" x:Name="SearchBox" TextChanged="SearchBox_TextChanged" VerticalContentAlignment="Center" Height="24"/>
-                    <Button Grid.Column="2" x:Name="WaitButton" Content="キー入力で検索" Click="WaitButton_Click" Margin="8,0,0,0" Padding="12,0"/>
-                    <Button Grid.Column="3" Content="リセット" Click="Reset_Click" Margin="8,0,0,0" Padding="12,0" Height="24"/>
+                    <ListBox x:Name="KeyListBox" ItemsSource="{Binding KeySettings}" SelectionMode="Extended" SelectionChanged="Selection_Changed">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel LastChildFill="False" Margin="2">
+                                    <TextBlock Text="{Binding Name}"/>
+                                    <TextBlock Text="{Binding Paths.Count, StringFormat=({0})}" DockPanel.Dock="Right" Opacity="0.5"/>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Grid Grid.Column="1" x:Name="KeyDetailArea" Visibility="Collapsed" Margin="15,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <DockPanel>
+                            <TextBlock x:Name="KeyDetailTitle" FontSize="18" FontWeight="Bold" DockPanel.Dock="Top" Margin="0,0,0,10"/>
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,10">
+                                <CheckBox x:Name="KeyOnPressCheck" Content="押したとき" Checked="OnPress_Changed" Unchecked="OnPress_Changed" Margin="0,0,15,0"/>
+                                <CheckBox x:Name="KeyOnReleaseCheck" Content="離したとき" Checked="OnRelease_Changed" Unchecked="OnRelease_Changed"/>
+                            </StackPanel>
+                            <ListBox x:Name="KeyPathList" ItemsSource="{Binding Paths}" HorizontalContentAlignment="Stretch" SelectionMode="Extended" AllowDrop="True" Drop="PathList_Drop" PreviewDragOver="PathList_DragOver">
+                                <ListBox.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="コピー" Click="CopyPaths_Click"/>
+                                        <MenuItem Header="貼り付け" Click="PastePaths_Click"/>
+                                        <Separator/>
+                                        <MenuItem Header="削除" Click="RemovePath_Click"/>
+                                        <MenuItem Header="リストを全てクリア" Click="ClearPaths_Click"/>
+                                    </ContextMenu>
+                                </ListBox.ContextMenu>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Height="28" Margin="0,2">
+                                            <Button Style="{StaticResource PlayButtonStyle}" Click="PlaySample_Click" Tag="{Binding}" DockPanel.Dock="Left">
+                                                <Path Data="{StaticResource IconPlay}" Fill="#444444" Stretch="Uniform"/>
+                                            </Button>
+                                            <TextBlock Text="{Binding Converter={local:PathToFileNameConverter}}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </DockPanel>
+                        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="10,40,0,0">
+                                <Button Style="{StaticResource IconButtonStyle}" ToolTip="ファイルを追加" Click="AddPath_Click">
+                                    <Path Data="{StaticResource IconPlus}" Fill="#444444" Stretch="Uniform"/>
+                                </Button>
+                                <Button Style="{StaticResource IconButtonStyle}" ToolTip="選択した項目を削除" Click="RemovePath_Click">
+                                    <Path Data="{StaticResource IconMinus}" Fill="#444444" Stretch="Uniform"/>
+                                </Button>
+                                <Button Style="{StaticResource IconButtonStyle}" ToolTip="フォルダを追加" Click="AddFolder_Click">
+                                    <Path Data="{StaticResource IconFolder}" Fill="#444444" Stretch="Uniform"/>
+                                </Button>
+                                <Button x:Name="KeyOtherButton" Style="{StaticResource IconButtonStyle}" ToolTip="その他" Click="OtherButton_Click">
+                                    <Path Data="{StaticResource IconDots}" Fill="#444444" Stretch="Uniform"/>
+                                    <Button.ContextMenu>
+                                        <ContextMenu x:Name="KeyOtherMenu">
+                                            <MenuItem Header="設定を書き出す" Click="ExportSetting_Click"/>
+                                            <MenuItem Header="設定を読み込む" Click="ImportSetting_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="リストをコピー" Click="CopyPaths_Click"/>
+                                            <MenuItem Header="リストを貼り付け" Click="PastePaths_Click"/>
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                </Button>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
                 </Grid>
-            </StackPanel>
-        </GroupBox>
-
-        <TabControl Grid.Row="2" Background="Transparent">
-            <TabItem Header="キーボード">
-                <ListBox ItemsSource="{Binding KeySettings}" HorizontalContentAlignment="Stretch" BorderThickness="0">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Border BorderThickness="0,0,0,1" BorderBrush="#11000000" Padding="0,5">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="110"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="35"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" VerticalAlignment="Center"/>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <CheckBox Content="押" IsChecked="{Binding OnPress}" Margin="8,0"/>
-                                        <CheckBox Content="離" IsChecked="{Binding OnRelease}" Margin="8,0"/>
-                                    </StackPanel>
-                                    <ItemsControl Grid.Column="2" ItemsSource="{Binding Paths}" Margin="10,0">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <DockPanel Height="20">
-                                                    <Button Content="×" Click="RemovePath_Click" DockPanel.Dock="Right" Width="16" Height="16" FontSize="10" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"/>
-                                                    <TextBlock Text="{Binding}" FontSize="10" Opacity="0.6" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                                </DockPanel>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                    <Button Grid.Column="3" Content="+" Click="AddPath_Click" Width="24" Height="24" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
             </TabItem>
-            <TabItem Header="マウス">
-                <ListBox ItemsSource="{Binding MouseSettings}" HorizontalContentAlignment="Stretch" BorderThickness="0">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Border BorderThickness="0,0,0,1" BorderBrush="#11000000" Padding="0,5">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="110"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="35"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" VerticalAlignment="Center"/>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <CheckBox Content="押" IsChecked="{Binding OnPress}" Margin="8,0"/>
-                                        <CheckBox Content="離" IsChecked="{Binding OnRelease}" Margin="8,0"/>
-                                    </StackPanel>
-                                    <ItemsControl Grid.Column="2" ItemsSource="{Binding Paths}" Margin="10,0">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <DockPanel Height="20">
-                                                    <Button Content="×" Click="RemovePath_Click" DockPanel.Dock="Right" Width="16" Height="16" FontSize="10" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"/>
-                                                    <TextBlock Text="{Binding}" FontSize="10" Opacity="0.6" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                                </DockPanel>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                    <Button Grid.Column="3" Content="+" Click="AddPath_Click" Width="24" Height="24" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+            <TabItem Header="マウス" x:Name="MouseTab">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="220"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <ListBox x:Name="MouseListBox" ItemsSource="{Binding MouseSettings}" SelectionMode="Extended" SelectionChanged="Selection_Changed">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel LastChildFill="False" Margin="2">
+                                    <TextBlock Text="{Binding Name}"/>
+                                    <TextBlock Text="{Binding Paths.Count, StringFormat=({0})}" DockPanel.Dock="Right" Opacity="0.5"/>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Grid Grid.Column="1" x:Name="MouseDetailArea" Visibility="Collapsed" Margin="15,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <DockPanel>
+                            <TextBlock x:Name="MouseDetailTitle" FontSize="18" FontWeight="Bold" DockPanel.Dock="Top" Margin="0,0,0,10"/>
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,10">
+                                <CheckBox x:Name="MouseOnPressCheck" Content="押したとき" Checked="OnPress_Changed" Unchecked="OnPress_Changed" Margin="0,0,15,0"/>
+                                <CheckBox x:Name="MouseOnReleaseCheck" Content="離したとき" Checked="OnRelease_Changed" Unchecked="OnRelease_Changed"/>
+                            </StackPanel>
+                            <ListBox x:Name="MousePathList" ItemsSource="{Binding Paths}" HorizontalContentAlignment="Stretch" SelectionMode="Extended" AllowDrop="True" Drop="PathList_Drop" PreviewDragOver="PathList_DragOver">
+                                <ListBox.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="コピー" Click="CopyPaths_Click"/>
+                                        <MenuItem Header="貼り付け" Click="PastePaths_Click"/>
+                                        <Separator/>
+                                        <MenuItem Header="削除" Click="RemovePath_Click"/>
+                                        <MenuItem Header="リストを全てクリア" Click="ClearPaths_Click"/>
+                                    </ContextMenu>
+                                </ListBox.ContextMenu>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Height="28" Margin="0,2">
+                                            <Button Style="{StaticResource PlayButtonStyle}" Click="PlaySample_Click" Tag="{Binding}" DockPanel.Dock="Left">
+                                                <Path Data="{StaticResource IconPlay}" Fill="#444444" Stretch="Uniform"/>
+                                            </Button>
+                                            <TextBlock Text="{Binding Converter={local:PathToFileNameConverter}}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </DockPanel>
+                        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="10,40,0,0">
+                                <Button Style="{StaticResource IconButtonStyle}" ToolTip="ファイルを追加" Click="AddPath_Click">
+                                    <Path Data="{StaticResource IconPlus}" Fill="#444444" Stretch="Uniform"/>
+                                </Button>
+                                <Button Style="{StaticResource IconButtonStyle}" ToolTip="選択した項目を削除" Click="RemovePath_Click">
+                                    <Path Data="{StaticResource IconMinus}" Fill="#444444" Stretch="Uniform"/>
+                                </Button>
+                                <Button Style="{StaticResource IconButtonStyle}" ToolTip="フォルダを追加" Click="AddFolder_Click">
+                                    <Path Data="{StaticResource IconFolder}" Fill="#444444" Stretch="Uniform"/>
+                                </Button>
+                                <Button x:Name="MouseOtherButton" Style="{StaticResource IconButtonStyle}" ToolTip="その他" Click="OtherButton_Click">
+                                    <Path Data="{StaticResource IconDots}" Fill="#444444" Stretch="Uniform"/>
+                                    <Button.ContextMenu>
+                                        <ContextMenu x:Name="MouseOtherMenu">
+                                            <MenuItem Header="設定を書き出す" Click="ExportSetting_Click"/>
+                                            <MenuItem Header="設定を読み込む" Click="ImportSetting_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="リストをコピー" Click="CopyPaths_Click"/>
+                                            <MenuItem Header="リストを貼り付け" Click="PastePaths_Click"/>
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                </Button>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </Grid>
             </TabItem>
         </TabControl>
     </Grid>
